@@ -34,7 +34,7 @@ Detailed documentation is available in the following files:
 
 - [Patient Contact Management System Documentation](Patient_Contact_Management_System_Documentation.md) - Technical details about the SQL implementation
 - [Python Implementation Roadmap](Python_Implementation_Roadmap.md) - Future development plans for a user-friendly interface
-- [LICENSE](license) - MIT License with healthcare-specific disclaimers
+- [LICENSE](license.md) - MIT License with healthcare-specific disclaimers
 
 ## Usage
 

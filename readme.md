@@ -32,8 +32,8 @@ The current implementation uses MySQL with plans for a Python-based UI that will
 
 Detailed documentation is available in the following files:
 
-- [Patient Contact Management System Documentation](Patient_Contact_Management_System_Documentation.md) - Technical details about the SQL implementation
-- [Python Implementation Roadmap](Python_Implementation_Roadmap.md) - Future development plans for a user-friendly interface
+- [Patient Contact Management System Documentation](contact-management-documentation.md) - Technical details about the SQL implementation
+- [Python Implementation Roadmap](python-future-roadmap.md) - Future development plans for a user-friendly interface
 - [LICENSE](license.md) - MIT License with healthcare-specific disclaimers
 
 ## Usage
@@ -51,7 +51,7 @@ For a detailed walkthrough of usage and examples, please refer to the full docum
 
 ## Healthcare Compliance Notice
 
-This software is designed as a tool for managing patient contact information. Users are responsible for ensuring their implementation complies with all applicable healthcare regulations and privacy laws. See the [LICENSE](LICENSE) file for a complete healthcare implementation disclaimer.
+This software is designed as a tool for managing patient contact information. Users are responsible for ensuring their implementation complies with all applicable healthcare regulations and privacy laws. See the [LICENSE](license.md) file for a complete healthcare implementation disclaimer.
 
 ## Future Development
 
@@ -68,7 +68,7 @@ Contributions to improve the system are welcome. Please review the documentation
 
 ## License
 
-This project is licensed under the MIT License with additional healthcare-specific disclaimers - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License with additional healthcare-specific disclaimers - see the [LICENSE](license.md) file for details.
 
 ---
 

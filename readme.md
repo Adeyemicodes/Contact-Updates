@@ -1,6 +1,6 @@
 # Patient Contact Management System
 
-A robust healthcare data management solution for updating patient contact information in legacy healthcare systems. This system efficiently processes both individual and batch updates of phone numbers and addresses while maintaining data integrity and audit trails.
+A robust healthcare data management solution for updating patient contact information in the Nigeria Medical Record System (NMRS). This system efficiently processes both individual and batch updates of phone numbers and addresses while maintaining data integrity and audit trails.
 
 ## Key Features
 

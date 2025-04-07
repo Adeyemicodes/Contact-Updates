@@ -1,5 +1,4 @@
-art_id,new_phone,new_address
-6277,08161536856,some address: awomama
-13350,07088078791,awomama Oru east lga
-4842,08012345671,okay address: GH Awomama
-5234,08122232401,"UMUOKA, AMAZU"
+art_id,new_phone,new_address,new_birthdate
+IMO02000020,07012345678,,1980-01-27
+IMO02000123,07112345678,old address 2   ,
+IMO02000276,,address 3,1980-03-27

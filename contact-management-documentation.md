@@ -2,7 +2,7 @@
 
 ## Overview
 
-This MySQL script facilitates the batch updating of patient contact information (phone numbers and addresses) in a healthcare management system. It implements sophisticated business logic to handle updates, maintain data integrity, and generate detailed reports on the process.
+This MySQL script facilitates the batch updating of patient contact information (phone numbers and addresses) in Nigeria Medical Record system. It implements sophisticated business logic to handle updates, maintain data integrity, and generate detailed reports on the process.
 
 ## Features
 

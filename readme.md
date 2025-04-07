@@ -1,62 +1,95 @@
 # Patient Contact Management System
 
-A robust healthcare data management solution for updating patient contact information in the Nigeria Medical Record System (NMRS). This system efficiently processes both individual and batch updates of phone numbers and addresses while maintaining data integrity and audit trails.
+## Overview
+
+A robust healthcare data management solution for updating patient contact information in the Nigeria Medical Record System (NMRS). This script facilitates batch updates to patient phone numbers, addresses, and birthdates while maintaining complete data integrity and audit trails.
+
+![OpenMRS Compatible](https://img.shields.io/badge/OpenMRS-Compatible-brightgreen)
+![MySQL 5.7](https://img.shields.io/badge/MySQL-5.7%20Compatible-blue)
 
 ## Key Features
 
-- Dual update capability for phone numbers and addresses
-- Smart matching logic to prevent redundant updates
-- Comprehensive validation and error handling
-- Detailed audit trails for all changes
-- Compatible with MySQL 5.7 and older versions
-- Generates detailed reports and statistics
+- **Comprehensive Updates**: Update phone numbers, addresses, and birthdates in a single batch process
+- **Data Validation**: Built-in validation for phone numbers and birthdates
+- **Smart Processing**: Skips unnecessary updates when new values match existing data
+- **Complete Audit Trail**: Maintains history of all changes with original values
+- **Detailed Reporting**: Generates comprehensive reports on update operations
+- **MySQL 5.7 Compatible**: Works with older MySQL versions
+- **Dynamic Schema Adaptation**: Automatically checks and adds required columns
 
-## Overview
+## Prerequisites
 
-The Patient Contact Management System is designed to solve common challenges in maintaining accurate patient contact information in healthcare databases. It provides a structured approach to:
+- MySQL 5.7 or higher
+- Database with OpenMRS schema
+- Appropriate database permissions
+- CSV file for batch updates (optional)
 
-1. Update phone numbers and addresses in batch or individually
-2. Validate data before processing updates
-3. Maintain a comprehensive history of all changes
-4. Generate reports on update status and statistics
+## Quick Start
 
-The current implementation uses MySQL with plans for a Python-based UI that will make the system more accessible to healthcare workers.
+1. Download the script: `Patient Contact Management System.sql`
+2. Modify CSV file path (line 74) or use manual data insertion option
+3. Execute script in MySQL environment
+4. Review generated reports
 
-## Technical Requirements
+## CSV Format
 
-- MySQL 5.7 or compatible database system
-- Database user with appropriate permissions
-- Secure file access for CSV imports
+The script accepts CSV files with the following columns:
+
+```
+art_id,new_phone,new_address,new_birthdate
+6277,08161536864,some address,1985-03-15
+13350,07088078791,,1990-06-22
+4842,,okay address: GH A,
+5234,08122232422,UMUOKA, AMAZU,
+```
+
+- Not all fields are required for each entry
+- The script will only update fields with values
+
+## Usage Examples
+
+### Example 1: Update Phone Numbers and Addresses
+
+```sql
+-- Manual data insertion
+INSERT INTO contact_update_staging (art_id, new_phone, new_address) 
+VALUES 
+    ('ART001', '08012345678', NULL),
+    ('ART002', NULL, 'New Address 123'),
+    ('ART003', '07012345678', 'New Address 456');
+```
+
+### Example 2: Update Patient Birthdates
+
+```sql
+-- Manual data insertion with birthdates
+INSERT INTO contact_update_staging (art_id, new_birthdate) 
+VALUES 
+    ('ART001', '1985-03-15'),
+    ('ART002', '1990-06-22');
+```
+
+## Reporting
+
+The script generates comprehensive reports including:
+- Individual update status for each field and patient
+- Summary statistics by update type
+- Date-range filtering capabilities
 
 ## Documentation
 
 Detailed documentation is available in the following files:
 
-- [Patient Contact Management System Documentation](contact-management-documentation.md) - Technical details about the SQL implementation
-- [Python Implementation Roadmap](python-future-roadmap.md) - Future development plans for a user-friendly interface
-- [LICENSE](license.md) - MIT License with healthcare-specific disclaimers
-
-## Usage
-
-### Basic Steps
-
-1. Prepare your CSV file with patient updates (format: art_id, new_phone, new_address)
-2. Update the file path in the script to point to your CSV
-3. Execute the script in your MySQL environment
-4. Review the generated reports for update status
-
-### Example
-
-For a detailed walkthrough of usage and examples, please refer to the full documentation.
+- [Contact Management Documentation](contact-management-documentation.md) - Technical details about the SQL implementation
+- [LICENSE](LICENSE) - MIT License with healthcare-specific disclaimers
 
 ## Healthcare Compliance Notice
 
-This software is designed as a tool for managing patient contact information. Users are responsible for ensuring their implementation complies with all applicable healthcare regulations and privacy laws. See the [LICENSE](license.md) file for a complete healthcare implementation disclaimer.
+This software is designed as a tool for managing patient contact information. Users are responsible for ensuring their implementation complies with all applicable healthcare regulations and privacy laws. See the [LICENSE](LICENSE) file for a complete healthcare implementation disclaimer.
 
 ## Future Development
 
 The roadmap includes developing a Python-based graphical user interface that will:
-
 - Provide more user-friendly data entry
 - Support single-patient updates
 - Offer enhanced reporting and visualization
@@ -68,8 +101,10 @@ Contributions to improve the system are welcome. Please review the documentation
 
 ## License
 
-This project is licensed under the MIT License with additional healthcare-specific disclaimers - see the [LICENSE](license.md) file for details.
+This project is licensed under the MIT License with additional healthcare-specific disclaimers - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-Created by [Adeyemi Adegoke]
+Created by Adeyemi Adegoke  
+Email: aadegoke007@gmail.com  
+Repository: [https://github.com/Adeyemicodes/Contact-Updates](https://github.com/Adeyemicodes/Contact-Updates)

@@ -3,12 +3,12 @@
  * Patient Contact Management System
  * ============================================================================
  * 
- * Description:  MySQL script for updating patient phone numbers and addresses
+ * Description:  MySQL script for updating patient phone numbers, addresses, and birthdates
  *               Compatible with MySQL 5.7 and older versions
  * 
- * Version:      2.1.0
+ * Version:      2.3.0
  * Created:      March 2024
- * Last Updated: March 5, 2025
+ * Last Updated: April 4, 2025
  * 
  * Author:       [Adeyemi]
  * Organization: [CCFN]
@@ -28,19 +28,45 @@
  */
 
 
--- Step 1: Create staging table for input data and status tracking
+-- Step 1: Create enhanced staging table for input data and status tracking (added birthdate field)
 CREATE TABLE IF NOT EXISTS contact_update_staging (
     id INT AUTO_INCREMENT PRIMARY KEY,
     art_id VARCHAR(50) NOT NULL,
     new_phone VARCHAR(50),
     new_address VARCHAR(255),
+    new_birthdate DATE,
+    old_birthdate VARCHAR(20), -- Added field to store original birthdate
     patient_id INT,
     phone_status VARCHAR(100),
     address_status VARCHAR(100),
+    birthdate_status VARCHAR(100),
     date_created DATETIME DEFAULT NOW()
 );
 
--- Step 2: Create temporary table for final report
+-- Step 0: Check if old_birthdate column exists and add it if not
+SET @table_name = 'contact_update_staging';
+SET @column_name = 'old_birthdate';
+
+-- Check if the column exists
+SELECT COUNT(*) INTO @column_exists 
+FROM information_schema.COLUMNS 
+WHERE TABLE_SCHEMA = DATABASE() 
+AND TABLE_NAME = @table_name 
+AND COLUMN_NAME = @column_name;
+
+-- Add the column if it doesn't exist
+SET @sql = CONCAT('ALTER TABLE ', @table_name, 
+                 ' ADD COLUMN ', @column_name, ' VARCHAR(20) NULL');
+
+-- Only execute if column doesn't exist
+SET @sql_exec = IF(@column_exists = 0, @sql, 'SELECT 1');
+PREPARE stmt FROM @sql_exec;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+
+
+-- Step 2: Create or update table for final report
 CREATE TABLE IF NOT EXISTS update_report (
     art_id VARCHAR(50),
     patient_id INT,
@@ -58,24 +84,29 @@ TRUNCATE TABLE update_report;
 -- Step 4: Option 1 - Insert data into staging table manually (placeholder - replace with actual data)
 -- Uncomment this section if you prefer manual insertion
 /*
-INSERT INTO contact_update_staging (art_id, new_phone, new_address) 
+INSERT INTO contact_update_staging (art_id, new_phone, new_address, new_birthdate) 
 VALUES 
-    ('ART001', '08012345678', NULL),
-    ('ART002', NULL, 'New Address 123'),
-    ('ART003', '07012345678', 'New Address 456');
+    ('ART001', '08012345678', NULL, '1985-03-15'),
+    ('ART002', NULL, 'New Address 123', '1990-06-22'),
+    ('ART003', '07012345678', 'New Address 456', NULL);
 */
 
 -- Step 4: Option 2 - Load data from CSV file in secure directory
 -- Use this option to load data from external CSV file
--- Format of CSV should be: art_id,new_phone,new_address (headers optional)
+-- Format of CSV should be: art_id,new_phone,new_address,new_birthdate (headers optional)
 LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 5.7/Uploads/contact_updates.csv'
 INTO TABLE contact_update_staging
 FIELDS TERMINATED BY ',' 
 OPTIONALLY ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
 IGNORE 1 ROWS -- Skip header row if present
-(art_id, new_phone, new_address)
-SET date_created = NOW();
+(art_id, new_phone, new_address, @new_birthdate)
+SET 
+    date_created = NOW(),
+    new_birthdate = CASE
+        WHEN @new_birthdate = '' THEN NULL
+        ELSE STR_TO_DATE(@new_birthdate, '%Y-%m-%d')
+    END;
 
 -- Step 5: Update patient_ids from identifier table
 UPDATE contact_update_staging s
@@ -95,7 +126,18 @@ SET phone_status =
         ELSE 'pending'
     END;
 
--- Step 7: Process phone number updates
+-- Step 7: Validate birthdate and mark invalid ones
+UPDATE contact_update_staging
+SET birthdate_status = 
+    CASE 
+        WHEN new_birthdate IS NULL THEN 'no update needed'
+        WHEN patient_id IS NULL THEN 'failed, invalid ART ID'
+        WHEN new_birthdate > CURDATE() THEN 'failed, birthdate cannot be in the future'
+        WHEN YEAR(new_birthdate) < 1900 THEN 'failed, birthdate too far in the past'
+        ELSE 'pending'
+    END;
+
+-- Step 8: Process phone number updates
 BEGIN;
 
 -- Find current phone numbers for comparison
@@ -155,7 +197,38 @@ WHERE phone_status = 'ready for update';
 
 COMMIT;
 
--- Step 8: Process address updates - IMPROVED LOGIC
+-- Step 9: Process birthdate updates
+BEGIN;
+
+-- Find current birthdates for comparison
+UPDATE contact_update_staging s
+JOIN person p ON p.person_id = s.patient_id
+SET 
+    s.old_birthdate = DATE_FORMAT(p.birthdate, '%Y-%m-%d'), -- Store the original value
+    s.birthdate_status = 
+    CASE 
+        WHEN s.birthdate_status = 'pending' AND DATE(s.new_birthdate) = DATE(p.birthdate) THEN 'skipped, matches current'
+        WHEN s.birthdate_status = 'pending' THEN 'ready for update'
+        ELSE s.birthdate_status
+    END;
+
+-- Update birthdates
+UPDATE person p
+JOIN contact_update_staging s ON p.person_id = s.patient_id
+SET 
+    p.birthdate = s.new_birthdate,
+    p.date_changed = NOW(),
+    p.changed_by = 1
+WHERE s.birthdate_status = 'ready for update';
+
+-- Update final birthdate status
+UPDATE contact_update_staging
+SET birthdate_status = 'updated successfully'
+WHERE birthdate_status = 'ready for update';
+
+COMMIT;
+
+-- Step 10: Process address updates - IMPROVED LOGIC
 
 -- Mark address updates status with fixed comparison logic
 BEGIN;
@@ -260,7 +333,7 @@ WHERE address_status = 'ready for update';
 
 COMMIT;
 
--- Step 9: Generate final report
+-- Step 11: Generate final report
 INSERT INTO update_report
 SELECT 
     art_id,
@@ -289,13 +362,24 @@ SELECT
     address_status,
     NOW()
 FROM contact_update_staging s
-WHERE new_address IS NOT NULL AND TRIM(new_address) != '';
+WHERE new_address IS NOT NULL AND TRIM(new_address) != ''
+UNION ALL
+SELECT 
+    art_id,
+    patient_id,
+    'Birthdate',
+    s.old_birthdate, -- Use stored old birthdate value instead of querying the person table
+    DATE_FORMAT(new_birthdate, '%Y-%m-%d'),
+    birthdate_status,
+    NOW()
+FROM contact_update_staging s
+WHERE new_birthdate IS NOT NULL;
 
--- Step 10: Show final report
+-- Step 12: Show final report
 SELECT * FROM update_report
 ORDER BY art_id, update_type;
 
--- Step 11: Create another view for overall statistics report
+-- Step 13: Create another view for overall statistics report
 SELECT 
     'Phone Updates' AS update_category,
     COUNT(*) AS total_attempts,
@@ -314,7 +398,33 @@ SELECT
     SUM(CASE WHEN address_status LIKE 'failed%' THEN 1 ELSE 0 END) AS failed_updates,
     SUM(CASE WHEN address_status = 'no update needed' THEN 1 ELSE 0 END) AS no_update_needed
 FROM contact_update_staging
-WHERE new_address IS NOT NULL;
+WHERE new_address IS NOT NULL
+UNION ALL
+SELECT 
+    'Birthdate Updates' AS update_category,
+    COUNT(*) AS total_attempts,
+    SUM(CASE WHEN birthdate_status = 'updated successfully' THEN 1 ELSE 0 END) AS successful_updates,
+    SUM(CASE WHEN birthdate_status LIKE 'skipped%' THEN 1 ELSE 0 END) AS skipped_updates,
+    SUM(CASE WHEN birthdate_status LIKE 'failed%' THEN 1 ELSE 0 END) AS failed_updates,
+    SUM(CASE WHEN birthdate_status = 'no update needed' THEN 1 ELSE 0 END) AS no_update_needed
+FROM contact_update_staging
+WHERE new_birthdate IS NOT NULL;
+
+-- Optional: Create a report for date-range based analysis
+-- Replace @start_date and @end_date with actual parameters or values
+-- Example: SET @start_date = '2025-01-01'; SET @end_date = '2025-04-30';
+SELECT 
+    DATE_FORMAT(date_processed, '%Y-%m-%d') AS update_date,
+    update_type,
+    COUNT(*) AS total_updates,
+    SUM(CASE WHEN status = 'updated successfully' THEN 1 ELSE 0 END) AS successful,
+    SUM(CASE WHEN status LIKE 'skipped%' THEN 1 ELSE 0 END) AS skipped,
+    SUM(CASE WHEN status LIKE 'failed%' THEN 1 ELSE 0 END) AS failed
+FROM update_report
+WHERE (@start_date IS NULL OR date_processed >= @start_date)
+AND (@end_date IS NULL OR date_processed <= @end_date)
+GROUP BY update_date, update_type
+ORDER BY update_date DESC, update_type;
 
 -- Optional: Clean up staging table after successful run
 -- TRUNCATE TABLE contact_update_staging;
